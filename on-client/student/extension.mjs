@@ -28,8 +28,11 @@ export function createStudentView() {
         p.textContent = `${label}: ${value}`;
         parent.appendChild(p);
       };
-      const stateText = (value, dictionary) =>
-        Object.hasOwn(dictionary, value) ? dictionary[value] : dictionary.unknown;
+      const stateText = (value, dictionary) => {
+        const code = typeof value === 'string' ? value : 'unknown';
+        const label = Object.hasOwn(dictionary, code) ? dictionary[code] : dictionary.unknown;
+        return `${label}(${code})`;
+      };
 
       const resources = [
         { title: '현재 계정 및 로그인 정보', name: 'me', resource: me },
