@@ -258,7 +258,19 @@ export function createStudentView() {
         addText(detail, 'p', `접속 상태(access): ${stateText('access', event.state.access)}`);
         addText(detail, 'p', `세션 상태(session): ${stateText('session', event.state.session)}`);
         addText(detail, 'p', `기기 상태(device): ${stateText('device', event.state.device)}`);
-        // 지원하지 않는 원천 조치에 대한 동작 버튼은 생성하지 않는다.
+        // 이 단계는 아직 조치를 실행하지 않는다. 입력된 항목만 비활성 안내한다.
+        if (Array.isArray(event.supportedActions) && event.supportedActions.length > 0) {
+          const unsupported = document.createElement('section');
+          addText(unsupported, 'p', '조치 실행 연결은 준비 중입니다. 아래 조치는 아직 지원하지 않으며 어떤 요청도 보내지 않습니다.');
+          for (const action of event.supportedActions) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = `${action} 미지원`;
+            button.disabled = true;
+            unsupported.appendChild(button);
+          }
+          detail.appendChild(unsupported);
+        }
         detailHost.replaceChildren(detail);
       };
       const renderList = () => {
