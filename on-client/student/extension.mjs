@@ -521,7 +521,85 @@ export function createStudentView() {
   add('', '현재 연결 성공 여부를 확인할 수 없습니다.');
   return root;
 },
-    renderExplanation() { return '학생 구현 대기: 선택한 사건의 근거·규칙·현재 상태와 AI 설명을 연결하세요. 제안은 자동 실행하지 않습니다.'; },
+    renderExplanation({ event, explanation, checkedAt } = {}) {
+  // 17단계 기본 화면: 사건 설명을 요청하거나 자동 실행하지 않고, 제공 결과만 표시한다.
+  const root = document.createElement('section');
+  root.setAttribute('aria-label', '선택한 사건의 AI 설명');
+  const add = (label, value) => {
+    const p = document.createElement('p');
+    p.textContent = label ? `${label}: ${value}` : value;
+    root.appendChild(p);
+  };
+  const allowedId = value => typeof value === 'string' && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,79}$/.test(value);
+  const containsSecret = /(?:Bearer\s+\S+|sk-(?:proj-|ant-|svcacct-)?[A-Za-z0-9_-]{8,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|(?:api[_ -]?key|authorization|password|비밀번호|access[_ -]?token|refresh[_ -]?token)\s*[:=]\s*\S+)/i;
+  if (!event || !allowedId(event.id)) {
+    add('안내', '보안 기록에서 설명할 기록을 먼저 고르세요.');
+    return root;
+  }
+  const eventId = event.id;
+  if (explanation?.status === 'idle' || !explanation?.status) {
+    add('기록 ID', eventId);
+    add('상태', 'AI 사건 설명 요청 전');
+    add('', '연결 점검 결과만으로 사건 설명을 완료했다고 판단하지 않습니다.');
+    return root;
+  }
+  if (explanation.status === 'loading') {
+    add('기록 ID', eventId);
+    add('상태', 'AI 사건 설명 요청 중');
+    add('', '설명 결과가 도착하기 전에는 성공으로 표시하지 않습니다.');
+    return root;
+  }
+  if (explanation.status === 'error') {
+    // 제공 코드가 안전하게 정제한 오류만 사용한다. 모르는 코드·비밀값은 출력하지 않는다.
+    const knownCodes = new Set([
+      'ON_AI_PROVISIONING_PENDING', 'ON_AI_AUTHORIZATION_CHANGED',
+      'ON_AI_INVALID_INPUT', 'ON_AI_INVALID_OUTPUT', 'AI_REQUEST_UNVERIFIED',
+      'WB_CLCO_AUTH_REQUIRED', 'WB_CLCO_ACCESS_BLOCKED',
+      'WB_CLCO_COHORT_BUDGET_EXHAUSTED', 'WB_CLCO_LIMIT_REACHED',
+      'WB_CLCO_SESSION_CLOSED', 'WB_CLCO_RATE_LIMITED', 'WB_CLCO_TIMEOUT',
+      'WB_CLCO_NETWORK_ERROR', 'WB_CLCO_SERVER_UNAVAILABLE',
+      'MODEL_NOT_CONFIGURED', 'ON_AI_MODEL_LIST_EMPTY',
+      'CANCELLED', 'REQUEST_CANCELLED', 'WB_CLCO_CANCELLED',
+      'TIMEOUT', 'REQUEST_TIMEOUT', 'ENGINE_TIMEOUT', 'SUBJECT_SCOPE_UNVERIFIED',
+    ]);
+    const known = allowedId(explanation.error?.code) && knownCodes.has(explanation.error.code);
+    const code = known ? explanation.error.code : 'AI_REQUEST_UNVERIFIED';
+    const message = known && typeof explanation.error?.message === 'string'
+      && explanation.error.message.trim()
+      && explanation.error.message.length <= 500
+      && !containsSecret.test(explanation.error.message)
+      && !/[\u0000-\u001f\u007f]/.test(explanation.error.message)
+      ? explanation.error.message : '안전한 오류 메시지를 확인할 수 없습니다.';
+    add('기록 ID', eventId);
+    add('상태', 'AI 설명 실패');
+    add('오류 코드(error.code)', code);
+    add('오류 메시지(error.message)', message);
+    add('', '기존 보안 기록은 그대로입니다. AI 설명 실패를 접속 기록 실패로 판단하지 않습니다.');
+    return root;
+  }
+  if (explanation.status === 'ok') {
+    const summary = explanation.data?.summary;
+    if (typeof summary !== 'string' || !summary.trim() || summary.length > 1500
+      || containsSecret.test(summary) || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(summary)) {
+      add('기록 ID', eventId);
+      add('상태', 'AI 설명 확인 불가');
+      add('', '설명 내용의 형식이나 안전성을 확인할 수 없습니다. 기록은 그대로입니다.');
+      return root;
+    }
+    root.setAttribute('data-student-explanation-event', eventId);
+    add('제목', 'AI 설명(참고용)');
+    add('기록 ID', eventId);
+    add('AI 요약(summary)', summary);
+    if (typeof checkedAt === 'string' && checkedAt.trim())
+      add('설명 확인 시각', checkedAt);
+    add('', '이 결과는 선택한 기록에 대한 AI 설명이며 실제 보안 조치가 실행됐다는 뜻이 아닙니다.');
+    return root;
+  }
+  add('기록 ID', eventId);
+  add('상태', 'AI 사건 설명 상태 확인 불가');
+  add('', '설명 성공 여부를 확인할 수 없습니다. 기록은 그대로입니다.');
+  return root;
+},
     renderAction() { return '학생 구현 대기: 현재 사건·조치·실제 대상·사람 확인·ACK와 원천 효과·unknown을 구분하세요.'; },
   };
 }
