@@ -23,5 +23,6 @@ npm start도 같은 서버를 켭니다. 기본 실행은 실제 회사 시스�
 - 단계별 안내와 AI에 붙여 넣을 문장: docs/STUDENT_PROMPTS.md
 - 단계별 확인 항목: docs/CURRICULUM.json, docs/IMPLEMENTATION_CONTRACT.md
 - 오류 코드별 해결: docs/CONNECTION_TROUBLESHOOT.md
+- 17단계 AI 사건 설명 호출의 **제공 서버·HTTP 전송 원문 증거(정적 검토)**: [docs/STAGE17_AI_MODEL_CALL_REVIEW.md](docs/STAGE17_AI_MODEL_CALL_REVIEW.md). 실제 계정·모델 연결 성공을 뜻하지 않습니다.
 - 시작 틀 업데이트(내 파일 보존): docs/STARTER_UPDATE.md
 - 실제 회사 시스템(SDP)·앱 안 AI 연결은 담당자가 따로 안내할 때만 씁니다: docs/SDP_HOST_CONNECTION.md, docs/AI_SETUP_GUIDE.md. 이 연결은 앱을 처음 켜고 13~16단계 화면을 만들거나 공식 AI 코드 판정을 받기 위한 전제 조건은 아닙니다. 다만 17단계 이후의 실제 연결과 새 환경 재현은 해당 단계의 기준에 따라 따로 확인합니다.
