@@ -442,9 +442,13 @@ export function createStudentView() {
         && Number.isFinite(Date.parse(value));
       const packageName = value => safe(value) && value.length <= 214
         && /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/.test(value);
-      const exactVersion = value => safe(value) && value.length <= 100
-        && /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(value)
-        && !/(?:^|[-.])0\d/.test(value);
+      const exactVersion = value => {
+        if (!safe(value) || value.length > 100) return false;
+        // SemVer: 숫자로만 구성된 사전 출시 식별자에만 선행 0을 금지한다.
+        // 문자 혼합 사전 출시 식별자와 + 뒤 빌드 식별자는 제외하지 않는다.
+        const match = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/.exec(value);
+        return !!match && (!match[1] || match[1].split('.').every(part => !/^0\d+$/.test(part)));
+      };
       const vulnId = value => safe(value) && value.length <= 160
         && /^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(value);
       if (safe(mode)) add('조회 모드(mode)', mode);
