@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/style.css">
   <script type="module" src="/app.js"></script>
   <script type="module" src="/pc-status.mjs"></script>
+  <script type="module" src="/windows-observation.mjs"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -52,8 +53,37 @@
           <p class="muted">이 앱을 실행한 PC에서 직접 잰 값입니다. 예제(demo) 계정·사건과 관계없습니다. 디스크는 앱 폴더가 있는 드라이브 기준입니다.</p>
           <div class="row"><button type="button" id="pc-status-refresh" class="btn">지금 다시 측정</button></div>
           <p id="pc-status-message" role="status" aria-live="polite">측정 전 · 확인 불가</p>
-          <div id="pc-status-values" class="pc-status-grid" aria-live="polite"></div>
+          <div class="dashboard-summary-grid" aria-label="PC 상태와 SDP 연결 상태">
+            <div id="pc-status-values" class="pc-status-grid" aria-live="polite"></div>
+            <section id="sdp-status-summary" class="pc-status-metric" aria-live="polite">
+              <h3>SDP 서버 연결</h3>
+              <p class="pc-status-value">확인 불가</p>
+              <p>연결 상태 조회 전 · PC 측정과 별도</p>
+            </section>
+          </div>
           <div id="pc-status-compare" class="pc-status-compare" aria-live="polite"></div>
+        </section>
+
+        <section class="card student" aria-labelledby="windows-observation-title">
+          <h2 id="windows-observation-title">Windows 네트워크·방화벽·이벤트 <span class="tag tag-student">학생 추가 · 읽기 전용</span></h2>
+          <p class="muted">이 앱을 실행한 Windows PC의 로컬 정보를 조회합니다. 실제 네트워크·방화벽 설정은 변경하지 않습니다. 아래 Windows 로그 건수는 침해·공격 탐지 건수나 감염 판정이 아닙니다.</p>
+          <div class="row"><button type="button" id="windows-observation-refresh" class="btn">Windows 상태 다시 조회</button></div>
+          <p id="windows-observation-message" role="status" aria-live="polite">조회 전 · 확인 불가</p>
+          <div class="dashboard-observation-grid">
+            <section class="dashboard-observation-panel" aria-labelledby="windows-network-title">
+              <h3 id="windows-network-title">네트워크 연결 상태</h3>
+              <div id="windows-network" aria-live="polite">조회 전 · 확인 불가</div>
+            </section>
+            <section class="dashboard-observation-panel" aria-labelledby="windows-firewall-title">
+              <h3 id="windows-firewall-title">방화벽 설정</h3>
+              <div id="windows-firewall" aria-live="polite">조회 전 · 확인 불가</div>
+            </section>
+            <section class="dashboard-observation-panel dashboard-observation-wide" aria-labelledby="windows-events-title">
+              <h3 id="windows-events-title">최근 Windows 기록 · 지난 24시간</h3>
+              <p class="muted">System 및 Application의 경고(Level 3)와 오류(Level 2) 건수만 집계합니다. 침해·공격 탐지 결과가 아닙니다.</p>
+              <div id="windows-events" aria-live="polite">조회 전 · 확인 불가</div>
+            </section>
+          </div>
         </section>
 
         <div class="grid-2">

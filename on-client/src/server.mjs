@@ -17,6 +17,7 @@ import {createVaultOnAiService} from './ai/vault-service.mjs';
 import {createConnectionManager} from './connection/manager.mjs';
 import {createProjectScanner} from './vulnerabilities/project-scan.mjs';
 import {collectPcStatus} from './pc-status.mjs';
+import {collectWindowsObservation} from './windows-observation.mjs';
 import {buildLocalLearnerSupportGuide,isLearnerSupportProblemKind,readLocalLearnerSupportObservation} from './learner-support/service.mjs';
 import {nativeOwn,nativePublicError} from './connection/native-login.mjs';
 import {createNativeHostContext,captureNativeHostConfiguration,readNativeHostConfiguration,openNativeHostOperation,readNativeHostOperation,assertNativeHostOperation,createNativeOperationVault,closeNativeHostOperation} from './connection/native-context.mjs';
@@ -26,7 +27,7 @@ const id=value=>typeof value==='string'&&/^[A-Za-z0-9][A-Za-z0-9._:-]{0,79}$/.te
 const record=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 const text=value=>typeof value==='string'&&value.length<=2000;
 const files=new Map([['/','public/index.html'],['/index.html','public/index.html'],['/app.js','public/app.js'],['/style.css','public/style.css'],['/vulnerabilities-view.mjs','public/vulnerabilities-view.mjs'],['/student/extension.mjs','student/extension.mjs'],
-  ['/pc-status.mjs','public/pc-status.mjs'],
+  ['/pc-status.mjs','public/pc-status.mjs'],['/windows-observation.mjs','public/windows-observation.mjs'],
   ['/ai-connect.mjs','public/ai-connect.mjs'],
   ...['alekov-ai-explain','alekov-app-icon','alekov-connect-approval','alekov-connection-unknown','alekov-empty-records'].map(name=>[`/assets/alekov/${name}.webp`,`public/assets/alekov/${name}.webp`])]);
 const connectionRoutes=new Map(['start','finish','status','cancel'].map(kind=>[`/api/ai/connect/${kind}`,kind]));
@@ -313,6 +314,10 @@ export function createOnServer(serverOptions={}) {
       return snapshot;
     }:undefined});
   const meta=()=>({mode,checkedAt:clock().toISOString(),starterVersion:'0.1.0'});
+  // Adapter configuration alone is not proof of a live SDP admission response.
+  const sdpObservation=()=>!sdpHostEngine&&(mode==='disconnected'||mode==='demo')
+    ? {status:'disconnected',reason:'NO_SDP_CONFIG',checkedAt:clock().toISOString()}
+    : {status:'unavailable',reason:'SDP_LIVE_RESPONSE_UNVERIFIED',checkedAt:clock().toISOString()};
   const server=http.createServer(async(req,res)=>{
     // Register before identity/events reads: disconnects during preparation must
     // cancel the later AI operation, even when an adapter ignores cancellation.
@@ -380,6 +385,10 @@ export function createOnServer(serverOptions={}) {
       if(req.method==='GET'&&url.pathname==='/api/pc-status'){
         const data=await bounded(()=>collectPcStatus({diskPath:root}));
         send(200,{ok:true,data});return;
+      }
+      if(req.method==='GET'&&url.pathname==='/api/windows-observation'){
+        const data=await bounded(()=>collectWindowsObservation());
+        send(200,{ok:true,data,sdp:sdpObservation()});return;
       }
       if(req.method==='POST'&&connectionRoutes.has(url.pathname)){
         const kind=connectionRoutes.get(url.pathname),keys=kind==='start'?[]:['connectionId'];

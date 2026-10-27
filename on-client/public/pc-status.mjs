@@ -70,7 +70,7 @@ function render(data,previous){
     ['디스크 남은 공간',data.disk,previous.disk,'availableBytes','GiB'],
   ])list.appendChild(element('li',`${title}: ${difference(next,old,field,unit)}`));
   compare.appendChild(list);
-  compare.appendChild(element('p','최근 두 번의 실제 로컬 측정만 비교합니다. 장기 추이나 알림은 제공하지 않습니다.','muted'));
+  compare.appendChild(element('p','최근 두 번의 실제 로컬 측정만 비교합니다. 장기 추이나 알림은 제공하지 않습니다. SDP 연결은 별도의 네 번째 상태 카드에서 확인합니다.','muted'));
 }
 
 async function refresh(){
