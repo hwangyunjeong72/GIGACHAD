@@ -12,10 +12,11 @@ const root=resolve(appRoot);
 const denyNames=new Set(['.env','.npmrc','id_rsa','id_ed25519']);
 const denyEnds=/\.(?:pem|pfx|p12|key|db|sqlite|sqlite3)$/i;
 
-async function git(...args){
-  const {stdout}=await run('git',args,{cwd:root,encoding:'utf8',maxBuffer:2_000_000});
+async function gitAt(cwd,...args){
+  const {stdout}=await run('git',args,{cwd,encoding:'utf8',maxBuffer:2_000_000});
   return stdout.trim();
 }
+const git=(...args)=>gitAt(root,...args);
 function safeFile(name){
   const parts=name.split(/[\\/]/);
   return !parts.some(part=>denyNames.has(part.toLowerCase())||denyEnds.test(part)
@@ -31,7 +32,7 @@ async function main(){
   if(dirty)throw Error('작업 폴더에 커밋되지 않은 변경이 있습니다. 먼저 상태를 확인하고 커밋한 뒤 포장해 주세요.');
   const relativeRoot=relative(repoRoot,root).split(sep).join('/');
   if(relativeRoot.startsWith('../')||relativeRoot==='..')throw Error('APP_OUTSIDE_GIT_REPO');
-  const tracked=await git('ls-files','-z','--',relativeRoot||'.');
+  const tracked=await gitAt(repoRoot,'ls-files','-z','--',relativeRoot||'.');
   const items=tracked.split('\0').filter(Boolean)
     .map(file=>({file,sub:relative(root,resolve(repoRoot,file))}))
     .filter(({sub})=>sub&&!sub.startsWith('..')&&!sub.startsWith(sep));
