@@ -63,15 +63,17 @@ test('형식 불량·명령 예외를 성공 또는 0으로 바꾸지 않는다'
 
 test('학생 UI 모의 DOM에서 조회값과 SDP 미연결·침해 판정 아님을 구분한다',async()=>{
   class FakeElement{
-    constructor(tag){this.tagName=tag;this.children=[];this.value='';this.disabled=false;}
+    constructor(tag){this.tagName=tag;this.children=[];this.value='';this.disabled=false;this.attributes={};this.hidden=false;}
     set textContent(text){this.value=String(text);this.children=[];}
     get textContent(){return this.value+this.children.map(child=>child.textContent).join(' ');}
     appendChild(child){this.children.push(child);return child;}
     replaceChildren(...children){this.value='';this.children=[...children];}
     addEventListener(kind,listener){if(kind==='click')this.click=listener;}
+    setAttribute(key,value){this.attributes[key]=value;}
+    removeAttribute(key){delete this.attributes[key];}
   }
   const ids=['windows-observation-refresh','windows-observation-message','windows-network',
-    'windows-firewall','windows-events','sdp-status-summary'];
+    'windows-firewall','windows-events','sdp-status-summary','windows-observation-errors'];
   const slots=new Map(ids.map(id=>[id,new FakeElement('div')]));
   const originalDocument=globalThis.document,originalFetch=globalThis.fetch;
   globalThis.document={getElementById:id=>slots.get(id),createElement:tag=>new FakeElement(tag)};
@@ -88,5 +90,50 @@ test('학생 UI 모의 DOM에서 조회값과 SDP 미연결·침해 판정 아�
     assert.match(slots.get('windows-events').textContent,/System.*확인 불가/s);
     assert.match(slots.get('windows-events').textContent,/Application.*오류 2건.*경고 0건/s);
     assert.doesNotMatch(slots.get('windows-events').textContent,/System.*오류 0건/s);
+    assert.match(slots.get('windows-observation-errors').textContent,/System 기록.*다음 행동/s);
+    assert.equal(slots.get('windows-observation-refresh').disabled,false);
   }finally{globalThis.document=originalDocument;globalThis.fetch=originalFetch;}
+});
+
+test('Windows 모의 조회 실패 → 오류 항목·다음 행동 → 버튼 재조회 및 대기 표시',async()=>{
+  class FakeElement{
+    constructor(tag){this.tagName=tag;this.value='';this.children=[];this.disabled=false;this.hidden=false;this.attributes={};}
+    set textContent(value){this.value=String(value);this.children=[];}
+    get textContent(){return this.value+this.children.map(child=>child.textContent).join(' ');}
+    appendChild(child){this.children.push(child);return child;}
+    replaceChildren(...children){this.value='';this.children=[...children];}
+    addEventListener(kind,callback){if(kind==='click')this.click=callback;}
+    setAttribute(name,value){this.attributes[name]=value;}
+    removeAttribute(name){delete this.attributes[name];}
+  }
+  const ids=['windows-observation-refresh','windows-observation-message','windows-network',
+    'windows-firewall','windows-events','sdp-status-summary','windows-observation-errors'];
+  const slots=new Map(ids.map(id=>[id,new FakeElement('div')]));
+  const oldDoc=globalThis.document,oldFetch=globalThis.fetch;
+  let finishFirst;let calls=0;
+  globalThis.document={getElementById:id=>slots.get(id),createElement:tag=>new FakeElement(tag)};
+  globalThis.fetch=()=>{
+    calls++;
+    if(calls===1)return new Promise(resolve=>{finishFirst=resolve;});
+    return Promise.resolve({ok:true,json:async()=>({ok:true,data:{
+      schema:'gigachad.windows-observation.v1',source:'local-windows',scope:'app-host',checkedAt,...success,
+    },sdp:{status:'disconnected',reason:'NO_SDP_CONFIG',checkedAt}})});
+  };
+  try{
+    await import('../public/windows-observation.mjs?test-retry');
+    assert.equal(slots.get('windows-observation-refresh').disabled,true);
+    assert.match(slots.get('windows-observation-refresh').textContent,/조회 중/);
+    assert.equal(slots.get('windows-network').attributes['aria-busy'],'true');
+    finishFirst({ok:false});
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(slots.get('windows-observation-refresh').disabled,false);
+    assert.match(slots.get('windows-observation-errors').textContent,/네트워크.*방화벽.*System 기록.*Application 기록/s);
+    assert.match(slots.get('windows-observation-errors').textContent,/다음 행동/);
+    assert.match(slots.get('windows-network').textContent,/확인 불가/);
+    await slots.get('windows-observation-refresh').click();
+    assert.equal(calls,2);
+    assert.equal(slots.get('windows-observation-errors').hidden,true);
+    assert.match(slots.get('windows-events').textContent,/System.*오류 0건/s);
+    assert.match(slots.get('windows-events').textContent,/조회 시각:/);
+  }finally{globalThis.document=oldDoc;globalThis.fetch=oldFetch;}
 });

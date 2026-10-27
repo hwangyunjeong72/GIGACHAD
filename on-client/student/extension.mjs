@@ -325,6 +325,40 @@ export function createStudentView() {
       };
       const retry = '다시 시도하려면 화면 위쪽의 「다시 불러오기」 버튼을 직접 누르세요. 자동으로 다시 요청하지 않습니다.';
       const errorText = resource => `${resource?.error?.code === 'TIMEOUT' ? '시간 초과 · ' : ''}${safeText(resource?.error?.message)}`;
+
+      // 기존 renderStatus 입력 계약으로 확인 가능한 세 분야만 학생 요약에 쓴다.
+      // CPU·방화벽·Windows 이벤트 값은 이 함수의 인자가 아니므로 추측하지 않는다.
+      const overview = document.createElement('section');
+      overview.setAttribute('aria-label', '우선 확인할 보안 상태 세 가지');
+      overview.className = 'student-priority';
+      add(overview, 'h3', '먼저 확인할 보안 상태 3가지');
+      const summaries = document.createElement('div');
+      summaries.className = 'student-priority-grid';
+      const describe = (title, status, detail, action) => {
+        const card = document.createElement('section');
+        card.className = 'student-priority-card';
+        add(card, 'h4', title);
+        add(card, 'p', `상태: ${status}`);
+        add(card, 'p', detail);
+        if (action) add(card, 'p', `다음 행동: ${action}`);
+        summaries.appendChild(card);
+      };
+      const stateLabel = item => item?.status === 'loading' ? '조회 중'
+        : item?.status === 'ok' ? '조회 응답 확인'
+        : item?.status === 'error' ? '확인 불가' : '조회 전 · 확인 불가';
+      const deviceFailure = devices?.status === 'error' || sessions?.status === 'error';
+      describe('1. 기기·세션', `${stateLabel(devices)} / ${stateLabel(sessions)}`,
+        '현재 계정 범위의 기기 및 세션 조회입니다. PC의 CPU·메모리 수치가 아닙니다.',
+        deviceFailure ? retry : '아래의 등록 기기와 현재 세션을 확인하세요.');
+      const noticeItems = Array.isArray(notifications) ? notifications : null;
+      describe('2. 주의 알림', noticeItems ? `화면 알림 ${noticeItems.length}개 (침해 탐지 건수 아님)` : '확인 불가',
+        '제공 UI가 구성한 상태·오류 알림이며 Windows System·Application 로그 집계와 다릅니다.',
+        noticeItems === null ? retry : '아래 알림의 원인과 내용을 확인하세요.');
+      describe('3. 연결 진단', stateLabel(diagnostics),
+        '제공 진단 상태만 요약합니다. 연결 설정만으로 실제 SDP 응답 성공을 뜻하지 않습니다.',
+        diagnostics?.status === 'error' ? retry : '아래 연결 진단 정보에서 결과와 시각을 확인하세요.');
+      overview.appendChild(summaries);
+      root.appendChild(overview);
       if (mode === 'demo') add(root, 'p', '예제 자료(demo) · 실제 연결 아님');
       if (mode === 'disconnected') add(root, 'p', '연결 없음(disconnected)');
       if (mode === 'unknown') add(root, 'p', '연결 상태 확인 불가(unknown)');

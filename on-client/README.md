@@ -18,6 +18,8 @@ npm start도 같은 서버를 켭니다. 기본 실행은 실제 회사 시스�
 
 Windows 3일차 조회는 **관리자 권한 없이** 네트워크 어댑터/IP, 방화벽 프로필, System·Application 로그의 최근 24시간 경고/오류 **건수만 읽습니다**. 침해·공격 탐지 건수가 아니며, 보안 설정·방화벽·이벤트 원본을 바꾸지 않습니다. 미지원 OS·권한 부족·조회 실패는 0이나 예제 값 대신 `확인 불가`와 이유로 표시합니다. Windows PowerShell 실행 정책 때문에 읽기 도구가 거부되면 설정을 바꾸지 않고 확인 불가로 남깁니다. 자세한 범위는 [docs/PC_OBSERVATION_DAY3.md](docs/PC_OBSERVATION_DAY3.md)에 있습니다.
 
+4일차에는 PC 자원·네트워크/방화벽·Windows 기록을 먼저 읽도록 제목과 크기를 정리하고, 두 로컬 `다시 조회` 버튼에 대기 상태와 항목별 오류·다음 행동 안내를 붙였습니다. 버튼은 Tab과 Enter/Space로 조작하며, 기존 제공 `다시 불러오기`와 요청 범위가 다릅니다. `student/extension.mjs`의 학생 상태 요약은 제공받은 기기·세션·알림·진단 데이터만 씁니다. 존재하지 않는 `student/appearance.json`은 추가하지 않았습니다. 자세한 확인 절차는 [docs/PC_DASHBOARD_DAY4.md](docs/PC_DASHBOARD_DAY4.md)를 보세요.
+
 기본 포장이 필요하면 **Git 커밋까지 끝낸 뒤**, 같은 `on-client` 폴더에서 아래 명령을 실행합니다.
 
     npm run package-app

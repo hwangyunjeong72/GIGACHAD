@@ -50,9 +50,11 @@
 
         <section class="card student" aria-labelledby="pc-status-title">
           <h2 id="pc-status-title">내 PC 상태 <span class="tag tag-student">학생 추가 · 실제 로컬 측정</span></h2>
+          <p class="dashboard-feature-lead"><strong>핵심 1 · PC 자원</strong> CPU·메모리·디스크를 먼저 확인합니다. 네 번째 카드의 SDP 연결은 별도 상태입니다.</p>
           <p class="muted">이 앱을 실행한 PC에서 직접 잰 값입니다. 예제(demo) 계정·사건과 관계없습니다. 디스크는 앱 폴더가 있는 드라이브 기준입니다.</p>
-          <div class="row"><button type="button" id="pc-status-refresh" class="btn">지금 다시 측정</button></div>
+          <div class="row"><button type="button" id="pc-status-refresh" class="btn" aria-label="CPU·메모리·디스크 다시 조회">PC 상태 다시 조회</button></div>
           <p id="pc-status-message" role="status" aria-live="polite">측정 전 · 확인 불가</p>
+          <div id="pc-status-errors" class="dashboard-error" role="alert" hidden></div>
           <div class="dashboard-summary-grid" aria-label="PC 상태와 SDP 연결 상태">
             <div id="pc-status-values" class="pc-status-grid" aria-live="polite"></div>
             <section id="sdp-status-summary" class="pc-status-metric" aria-live="polite">
@@ -66,9 +68,11 @@
 
         <section class="card student" aria-labelledby="windows-observation-title">
           <h2 id="windows-observation-title">Windows 네트워크·방화벽·이벤트 <span class="tag tag-student">학생 추가 · 읽기 전용</span></h2>
+          <p class="dashboard-feature-lead"><strong>핵심 2 · 네트워크·방화벽</strong> 연결 상태 및 설정을 확인합니다. <strong>핵심 3 · Windows 기록</strong> 아래에서 오류와 경고 건수를 확인합니다.</p>
           <p class="muted">이 앱을 실행한 Windows PC의 로컬 정보를 조회합니다. 실제 네트워크·방화벽 설정은 변경하지 않습니다. 아래 Windows 로그 건수는 침해·공격 탐지 건수나 감염 판정이 아닙니다.</p>
-          <div class="row"><button type="button" id="windows-observation-refresh" class="btn">Windows 상태 다시 조회</button></div>
+          <div class="row"><button type="button" id="windows-observation-refresh" class="btn" aria-label="네트워크·방화벽·Windows 기록 다시 조회">Windows 상태 다시 조회</button></div>
           <p id="windows-observation-message" role="status" aria-live="polite">조회 전 · 확인 불가</p>
+          <div id="windows-observation-errors" class="dashboard-error" role="alert" hidden></div>
           <div class="dashboard-observation-grid">
             <section class="dashboard-observation-panel" aria-labelledby="windows-network-title">
               <h3 id="windows-network-title">네트워크 연결 상태</h3>
