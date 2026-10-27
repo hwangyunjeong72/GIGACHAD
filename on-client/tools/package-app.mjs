@@ -70,13 +70,17 @@ async function main(){
     verification:'패키지 생성 확인. 사용자 Windows PC 실행·SDP 연결은 별도로 검증해야 함.',
   },null,2)+'\n','utf8');
   await writeFile(join(folder,'START-HERE.txt'),[
-    'GIGACHAD local dashboard package',
-    '1. Install Node.js 24.19.0 on the Windows PC if needed.',
-    '2. Double-click GIGACHAD-launch.lnk (if present), or GIGACHAD-start.cmd.',
-    '3. Open http://127.0.0.1:5189/ in the browser.',
-    '4. Close the launch terminal (Ctrl+C) to stop the app.',
-    'No tokens, credentials, private configuration or Windows logs are included.',
-    'SDP and AI connections require separately authorized configuration outside this package.',
+    '기가차드 | 처음 실행하는 사람을 위한 간단 안내',
+    '1. 이 포장 폴더 전체를 Windows PC의 일반 폴더에 보관합니다.',
+    '2. PowerShell에서 node --version 을 확인합니다. 권장 v24.19.0 (지원 22~24).',
+    '3. GIGACHAD-launch.lnk 가 있으면 더블클릭, 없으면 GIGACHAD-start.cmd 를 더블클릭합니다.',
+    '4. http://127.0.0.1:5189/ 를 브라우저에서 열고 보호 현황과 다시 조회를 확인합니다.',
+    '5. 실행 창에서 Ctrl+C 로 종료합니다. 브라우저만 닫아서는 서버가 종료되지 않습니다.',
+    '6. 오류가 나면 정확한 문구·막힌 단계를 적습니다. 관리자 권한이나 보안 설정 변경을 요구하지 않습니다.',
+    '포장본의 docs/GIGACHAD_DAY5_QUICK_START.md 에 처음 사용자용 전체 안내가 있습니다.',
+    '케셰브는 제공 시작 도구가 표시하는 기존 이름이며, 이 앱의 별칭은 기가차드입니다.',
+    'CPU/메모리/디스크는 앱 서버 PC 실측이며, 예제 자료와 SDP 연결 여부는 별개입니다.',
+    '비밀값·개인 설정·Windows 로그 원문은 포장하지 않습니다. SDP/AI 실연결은 별도 승인 설정이 필요합니다.',
     '',
   ].join('\r\n'),'utf8');
   console.log(`포장 완료: ${folder}`);

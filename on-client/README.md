@@ -8,6 +8,8 @@
 
 검수 환경은 Node.js 24.19.0이며 외부 npm 의존성이 없습니다. 이 폴더의 PowerShell에서 아래를 실행하고 PC 브라우저로 http://127.0.0.1:5189 를 엽니다. 자세한 켜기·끄기·다시 켜기는 docs/STUDENT_LAUNCH_GUIDE.md에 있습니다.
 
+**처음 실행하는 사람에게 전달할 안내:** [기가차드 5일차 · 한 장 실행 안내](docs/GIGACHAD_DAY5_QUICK_START.md). 포장본의 바로가기/실행 파일, 화면 확인, 오류 기록 순서가 있으며 친구의 실제 독립 실행 결과는 아직 미확인입니다.
+
     powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\start-alekov.ps1
 
 npm start도 같은 서버를 켭니다. 기본 실행은 실제 회사 시스템(기존 엔진)에 연결되지 않은 상태입니다. npm run demo는 예제 자료로 화면을 보여 줄 뿐이며 실제 연결이나 성취가 아닙니다. npm run check는 student/extension.mjs의 문법만 확인합니다.
