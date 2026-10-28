@@ -21,6 +21,10 @@ npm start도 같은 서버를 켭니다. 기본 실행은 실제 회사 시스�
 - **기존 학생 자료**: 이전 `public/pc-status.mjs`, `public/windows-observation.mjs`, `src/windows-observation.mjs` 및 2~5일차 기록·테스트를 삭제하지 않았습니다. 구버전 `/api/pc-status`·`/api/windows-observation`은 새 제공 서버에 없으므로 구형 화면 스크립트는 현재 HTML에서 불러오지 않습니다. 관련 모의 테스트 결과를 새 서버의 실연결 증명으로 사용하지 않습니다.
 - **처음 실행**: [0.2.21 기준 한 장 실행 안내](docs/GIGACHAD_DAY5_QUICK_START.md)와 기존 [상세 실행 안내](docs/STUDENT_LAUNCH_GUIDE.md)를 사용합니다.
 
+### 6일차 · 포장 없이 커밋과 제출 확인
+
+이번 수업 단계에서는 승인 실행 환경이 준비되지 않았으므로 **`npm run package-app`을 실행하지 않습니다.** 설치형 포장·바로가기를 만들지 않고, 현재 프로젝트 폴더에서 실행합니다. 작업 파일을 확인하고 GitHub `main`에 커밋한 뒤 제출용 40자리 SHA를 대조하는 절차는 [6일차 제출 안내](docs/GIGACHAD_DAY6_SUBMISSION.md)를 따릅니다. 과거 제출물과 학생 코드는 보존하며, 이 과정만으로 Windows 실제 조회·SDP 연결·운영 인증을 완료했다고 주장하지 않습니다.
+
 ### 기본 포장 계약 변경 주의
 
 0.2.11의 단순 `npm run package-app` → `GIGACHAD-start.cmd` 방식은 **0.2.21의 기본 포장과 다릅니다.** 최신 기본 포장은 담당자가 제공한 **승인 실행 환경**과 승인된 PNG 아이콘, 소스·출력 폴더 옵션이 필요하며, 결과는 설치용 `app.zip`·manifest·설치 안내입니다. 승인 실행 환경이 없으면 정상적으로 중단되어야 합니다. `--app-only-v1`은 별도의 호환 형식이지 기본 포장 성공이 아닙니다. [최신 제공 포장 안내](docs/PACKAGE_APP.md)를 확인하세요. 실제 Windows 설치·바로가기 생성·SDP·AI 실연결은 미확인입니다.
