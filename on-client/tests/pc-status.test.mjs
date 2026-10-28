@@ -1,56 +1,83 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {collectPcStatus} from '../src/pc-status.mjs';
+import {createPcStatusReader, cpuUsage} from '../src/pc-status.mjs';
+import {pcMetricText} from '../public/pc-status-view.mjs';
 import {createStudentView} from '../student/extension.mjs';
 
 const cpu=(idle,used)=>[{times:{user:used,nice:0,sys:0,idle,irq:0}}];
 const clock=()=>new Date('2026-10-26T01:02:03.000Z');
 
-test('각 항목의 실제 측정값·단위용 원시값·시각을 유지한다',async()=>{
+test('0.2.21 제공 PC 계약: 측정 원시값·시각·미지원 Windows 항목을 구분한다',async()=>{
   let count=0;
-  const result=await collectPcStatus({
-    readCpus:()=>++count===1?cpu(80,20):cpu(130,70),
-    readTotalMem:()=>8*1024**3,readFreeMem:()=>3*1024**3,
-    readStatfs:async()=>({bsize:4096n,blocks:1000000n,bavail:250000n}),
-    wait:async()=>{},now:clock,diskPath:'/test-only',
+  const read=createPcStatusReader({
+    system:{cpus:()=>++count===1?cpu(80,20):cpu(130,70),totalmem:()=>8*1024**3,
+      freemem:()=>3*1024**3,networkInterfaces:()=>({Ethernet:[{internal:false,family:'IPv4'}]})},
+    disk:async()=>({bsize:4096n,blocks:1000000n,bavail:250000n}),
+    pause:async()=>{},clock,platform:'linux',
   });
-  assert.equal(result.source,'local-os');
-  assert.equal(result.cpu.usagePercent,50);
-  assert.equal(result.memory.usedBytes,5*1024**3);
-  assert.equal(result.memory.totalBytes,8*1024**3);
-  assert.equal(result.disk.availableBytes,1024000000);
-  assert.equal(result.disk.volume,'app-drive');
-  for(const key of ['cpu','memory','disk']){
-    assert.equal(result[key].status,'measured');
-    assert.equal(result[key].measuredAt,clock().toISOString());
-  }
+  const result=await read();
+  assert.equal(result.schema,'aleph.on.pc-status.v1');
+  assert.equal(result.source,'local-pc');
+  assert.equal(result.measuredAt,clock().toISOString());
+  assert.equal(result.metrics.cpu.usagePercent,50);
+  assert.equal(result.metrics.memory.usedBytes,5*1024**3);
+  assert.equal(result.metrics.disk.freeBytes,1024000000);
+  assert.equal(result.metrics.network.interfaceCount,1);
+  assert.deepEqual(result.metrics.firewall,{state:'unavailable',reason:'unsupported'});
+  assert.deepEqual(result.metrics.events,{state:'unavailable',reason:'unsupported'});
 });
 
 test('CPU와 디스크 오류, 잘못된 메모리는 모두 확인 불가(0으로 대체하지 않음)',async()=>{
-  const result=await collectPcStatus({
-    readCpus:()=>{throw Error('unavailable');},
-    readTotalMem:()=>100,readFreeMem:()=>101,
-    readStatfs:async()=>{throw Error('unavailable');},
-    wait:async()=>{},now:clock,
-  });
+  const read=createPcStatusReader({system:{cpus:()=>{throw Error('unavailable');},
+    totalmem:()=>100,freemem:()=>101,networkInterfaces:()=>({})},
+    disk:async()=>{throw Error('unavailable');},pause:async()=>{},clock,platform:'linux'});
+  const result=await read();
   for(const key of ['cpu','memory','disk']){
-    assert.deepEqual(result[key],{status:'unavailable',measuredAt:null});
-    assert.equal(Object.hasOwn(result[key],'usagePercent'),false);
+    assert.equal(result.metrics[key].state,'unavailable');
+    assert.equal(Object.hasOwn(result.metrics[key],'usagePercent'),false);
+    assert.equal(pcMetricText(key,result.metrics[key]).text,'확인 불가');
   }
 });
 
 test('CPU 시간 차이가 없더라도 0% 사용률로 추정하지 않는다',async()=>{
-  const result=await collectPcStatus({
-    readCpus:()=>cpu(10,10),readTotalMem:()=>100,readFreeMem:()=>20,
-    readStatfs:async()=>({bsize:1024n,blocks:100n,bavail:20n}),
-    wait:async()=>{},now:clock,
-  });
-  assert.equal(result.cpu.status,'unavailable');
-  assert.equal(result.memory.status,'measured');
-  assert.equal(result.disk.status,'measured');
+  assert.equal(cpuUsage(cpu(10,10),cpu(10,10)).state,'unavailable');
+  assert.equal(pcMetricText('cpu',cpuUsage(cpu(10,10),cpu(10,10))).text,'확인 불가');
+  assert.equal(pcMetricText('memory',{state:'ok',usedBytes:80,totalBytes:100}).state,'measured');
+  assert.equal(pcMetricText('disk',{state:'ok',freeBytes:20,totalBytes:100}).state,'measured');
 });
 
-test('PC 모의 화면: 대기 중 버튼 잠금, 일부 확인 불가와 다음 행동, 다시 조회 시 시각 갱신',async()=>{
+test('0.2.21 학생 상단 4카드: 실제 PC 재조회·직전값 비교·조회 실패는 확인 불가',async()=>{
+  class FakeElement {
+    constructor(tag){this.tagName=tag;this.children=[];this.value='';this.dataset={};this.disabled=false;this.hidden=false;}
+    set textContent(value){this.value=String(value);this.children=[];}
+    get textContent(){return this.value+this.children.map(x=>x.textContent).join(' ');}
+    append(...children){this.children.push(...children);}
+    appendChild(child){this.children.push(child);return child;}
+    replaceChildren(...children){this.value='';this.children=[...children];}
+    setAttribute(){} removeAttribute(){}
+    addEventListener(kind,handler){if(kind==='click')this.click=handler;}
+  }
+  const original=globalThis.document,host=new FakeElement('section');
+  globalThis.document={createElement:tag=>new FakeElement(tag),getElementById:id=>id==='gigachad-pc-dashboard'?host:null};
+  const time=new Date().toISOString();let reads=0;
+  const payload=percent=>({ok:true,data:{schema:'aleph.on.pc-status.v1',source:'local-pc',measuredAt:time,
+    metrics:{cpu:{state:'ok',usagePercent:percent},memory:{state:'ok',usedBytes:5*1024**3,totalBytes:8*1024**3},
+      disk:{state:'ok',freeBytes:3*1024**3,totalBytes:10*1024**3}}}});
+  try{
+    createStudentView({api:{get:async path=>{assert.equal(path,'/api/pc/status');reads++;return reads===3?{ok:false,error:{code:'TIMEOUT'}}:payload(reads===1?20:30);}}});
+    const button=host.children[2];
+    assert.match(host.textContent,/SDP 서버 연결.*별도 확인 필요/s);
+    button.click();await new Promise(resolve=>setImmediate(resolve));
+    assert.match(host.textContent,/20\.0 %/);
+    button.click();await new Promise(resolve=>setImmediate(resolve));
+    assert.match(host.textContent,/증가 10\.0 %p/);
+    button.click();await new Promise(resolve=>setImmediate(resolve));
+    assert.match(host.textContent,/확인 불가: CPU·메모리·디스크/);
+    assert.equal(button.disabled,false);
+  }finally{globalThis.document=original;}
+});
+
+test('보존된 0.2.11 PC 모의 화면: 재조회와 오류 (현재 0.2.21 제공 라우트 검증은 아님)',async()=>{
   class FakeElement{
     constructor(tag){this.tagName=tag;this.value='';this.children=[];this.disabled=false;this.hidden=false;this.dataset={};this.attributes={};}
     set textContent(value){this.value=String(value);this.children=[];}

@@ -1,6 +1,110 @@
 // 이 파일은 학생이 같은 프로젝트에서 이어서 구현합니다.
 // 제공 UI를 받은 것만으로 단계 완료를 인정하지 않습니다.
-export function createStudentView() {
+// 0.2.21 학생 PC 조회 계약만 사용한다. 제공 PC 카드/서버를 수정하지 않는다.
+function mountGigachadPcDashboard(host, api) {
+  const make = (tag, content, className) => {
+    const node = document.createElement(tag);
+    if (content !== undefined) node.textContent = content;
+    if (className) node.className = className;
+    return node;
+  };
+  const title = make('h2', '기가차드 · PC 상태 요약');
+  const intro = make('p', '학생 개선 · 상단 4개 상태 카드와 최근 두 번의 측정 비교. 제공 통합 PC 조회와 독립적으로 요청합니다.', 'muted');
+  const button = make('button', 'PC 요약 다시 조회', 'btn'); button.type = 'button';
+  const status = make('p', '조회 전 · 실제 값 확인 불가'); status.setAttribute('role', 'status');
+  const grid = make('div', '', 'gigachad-summary-grid');
+  const trend = make('section', '', 'gigachad-trend');
+  const errors = make('div', '', 'gigachad-errors'); errors.setAttribute('role', 'alert'); errors.hidden = true;
+  host.replaceChildren(title, intro, button, status, errors, grid, trend);
+  const names = {cpu: 'CPU 사용률', memory: '메모리 사용량', disk: '디스크 남은 공간'};
+  let current = null, previous = null, busy = false;
+  const finite = n => typeof n === 'number' && Number.isFinite(n) && n >= 0;
+  const metric = (data, key) => {
+    const row = data?.metrics?.[key];
+    if (row?.state !== 'ok') return null;
+    if (key === 'cpu' && finite(row.usagePercent) && row.usagePercent <= 100) return {value: row.usagePercent, text: row.usagePercent.toFixed(1) + ' %', unit: '%p'};
+    if (key === 'memory' && finite(row.usedBytes) && finite(row.totalBytes) && row.totalBytes > 0 && row.usedBytes <= row.totalBytes) return {value: row.usedBytes, text: (row.usedBytes / 1073741824).toFixed(2) + ' / ' + (row.totalBytes / 1073741824).toFixed(2) + ' GiB', unit: 'GiB'};
+    if (key === 'disk' && finite(row.freeBytes) && finite(row.totalBytes) && row.totalBytes > 0 && row.freeBytes <= row.totalBytes) return {value: row.freeBytes, text: (row.freeBytes / 1073741824).toFixed(2) + ' GiB 남음', unit: 'GiB'};
+    return null;
+  };
+  const at = value => {
+    const date = new Date(value || '');
+    return Number.isFinite(date.getTime()) ? date.toLocaleString('ko-KR', {timeZone: 'Asia/Seoul', hour12: false}) + ' (KST)' : '확인 불가';
+  };
+  function paint() {
+    grid.replaceChildren();
+    for (const key of Object.keys(names)) {
+      const row = make('section', '', 'gigachad-summary-card');
+      const value = metric(current, key);
+      row.dataset.state = value ? 'measured' : 'unavailable';
+      row.append(make('h3', names[key]), make('p', value?.text ?? '확인 불가', 'gigachad-summary-value'),
+        make('p', '측정 시각: ' + (value ? at(current.measuredAt) : '확인 불가'), 'muted'));
+      grid.appendChild(row);
+    }
+    const sdp = make('section', '', 'gigachad-summary-card');
+    sdp.dataset.state = 'unavailable';
+    sdp.append(make('h3', 'SDP 서버 연결'), make('p', '별도 확인 필요', 'gigachad-summary-value'),
+      make('p', '이 PC 측정 결과로 SDP 연결을 단정하지 않습니다. 상단 연결 상태·진단 정보를 확인하세요.', 'muted'));
+    grid.appendChild(sdp);
+    trend.replaceChildren(make('h3', '직전 측정과 비교'));
+    if (!current || !previous) {
+      trend.appendChild(make('p', '비교할 실제 측정 2회가 없습니다. PC 요약 다시 조회를 누르세요.'));
+      return;
+    }
+    const list = make('ul');
+    for (const key of Object.keys(names)) {
+      const a = metric(current, key), b = metric(previous, key);
+      let comparison = '확인 불가';
+      if (a && b) {
+        const delta = a.unit === 'GiB' ? (a.value - b.value) / 1073741824 : a.value - b.value;
+        comparison = Math.abs(delta) < 0.00001 ? '변화 없음' : (delta > 0 ? '증가 ' : '감소 ') + Math.abs(delta).toFixed(a.unit === 'GiB' ? 2 : 1) + ' ' + a.unit;
+      }
+      list.appendChild(make('li', names[key] + ': ' + comparison));
+    }
+    trend.appendChild(list);
+  }
+  async function refresh() {
+    if (busy) return;
+    busy = true; button.disabled = true; button.textContent = 'PC 요약 조회 중…';
+    status.textContent = '이 PC의 실제 값을 조회 중…'; grid.setAttribute('aria-busy', 'true');
+    errors.hidden = true; errors.replaceChildren();
+    try {
+      const response = await api.get('/api/pc/status');
+      const data = response?.ok === true ? response.data : null;
+      const time = typeof data?.measuredAt === 'string' ? Date.parse(data.measuredAt) : NaN;
+      if (data?.schema !== 'aleph.on.pc-status.v1' || data.source !== 'local-pc' || !Number.isFinite(time) || Math.abs(Date.now() - time) > 60000) {
+        throw Error(response?.error?.code ?? 'INVALID_RESULT');
+      }
+      previous = current; current = data; paint();
+      const failed = Object.keys(names).filter(key => !metric(current, key));
+      status.textContent = '실제 로컬 조회 · ' + (3 - failed.length) + '/3항목 확인 · ' + at(data.measuredAt);
+      if (failed.length) {
+        errors.hidden = false;
+        errors.append(make('p', '확인 불가: ' + failed.map(key => names[key]).join(', ')),
+          make('p', '다음 행동: 일반 권한으로 다시 조회하고 계속 실패하면 화면의 오류를 기록하세요. 예시 값으로 대체하지 않습니다.'));
+      }
+    } catch (error) {
+      previous = null; current = null; paint();
+      const reason = {'TIMEOUT': '조회 시간 초과', 'NETWORK_ERROR': '로컬 서버 연결 실패',
+        'INVALID_RESPONSE': '서버 응답 오류', 'INVALID_RESULT': '측정값 또는 측정 시각 검증 실패'}[error?.message] ?? '응답 확인 실패';
+      status.textContent = 'PC 요약 확인 불가 · ' + reason;
+      errors.hidden = false;
+      errors.append(make('p', '확인 불가: CPU·메모리·디스크'),
+        make('p', '원인: ' + reason),
+        make('p', '다음 행동: 로컬 앱 실행 상태를 확인하고 PC 요약 다시 조회를 누르세요.'));
+    } finally {
+      busy = false; button.disabled = false; button.textContent = 'PC 요약 다시 조회'; grid.removeAttribute('aria-busy');
+    }
+  }
+  button.addEventListener('click', () => { void refresh(); });
+  paint();
+}
+
+export function createStudentView({ api } = {}) {
+  if (typeof document !== 'undefined' && typeof api?.get === 'function') {
+    const host = document.getElementById?.('gigachad-pc-dashboard');
+    if (host) mountGigachadPcDashboard(host, api);
+  }
   return {
     renderIdentity({ me, devices, sessions } = {}) {
       // 매 호출마다 새로운 DOM을 구성한다. 이전 계정·기기·세션 값은 보관하지 않는다.

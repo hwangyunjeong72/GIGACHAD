@@ -7,18 +7,17 @@
   <meta name="referrer" content="no-referrer">
   <title>케셰브 · ZTNA &amp; XDR</title>
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/student/appearance.css">
   <script type="module" src="/app.js"></script>
-  <script type="module" src="/pc-status.mjs"></script>
-  <script type="module" src="/windows-observation.mjs"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
 
   <header class="topbar">
     <div class="brand">
-      <img class="alekov-art brand-icon" src="/assets/alekov/alekov-app-icon.webp" alt="" aria-hidden="true" width="32" height="32" draggable="false">
+      <img id="brand-icon" class="alekov-art brand-icon" src="/assets/alekov/alekov-app-icon.webp" alt="" aria-hidden="true" width="32" height="32" draggable="false">
       <span class="brand-mark" id="brand-mark-fallback" aria-hidden="true" hidden>A</span>
-      <span class="brand-name">케셰브 <small>ZTNA &amp; XDR 보안 Agent</small></span>
+      <span class="brand-name"><span id="brand-title">케셰브</span> <small>ZTNA &amp; XDR 보안 Agent</small></span>
     </div>
     <div class="topbar-status">
       <span id="mode-badge" class="mode-badge" data-mode="loading" role="status" aria-live="polite">상태 확인 중</span>
@@ -39,6 +38,7 @@
 
     <main id="main" tabindex="-1">
       <div id="error-message" class="error-banner" data-testid="error-message" role="alert" hidden></div>
+      <p id="appearance-notice" class="appearance-notice" data-testid="appearance-notice" role="status" aria-live="polite" hidden></p>
 
       <p class="notice">
         <strong>제공 공통 UI</strong>와 <strong>학생 구현 표시</strong>(student/extension.mjs)는 구분되어 있습니다.
@@ -47,48 +47,24 @@
 
       <section id="view-protection" class="view" role="tabpanel" aria-labelledby="tab-protection">
         <h1>보호 현황</h1>
-
-        <section class="card student" aria-labelledby="pc-status-title">
-          <h2 id="pc-status-title">내 PC 상태 <span class="tag tag-student">학생 추가 · 실제 로컬 측정</span></h2>
-          <p class="dashboard-feature-lead"><strong>핵심 1 · PC 자원</strong> CPU·메모리·디스크를 먼저 확인합니다. 네 번째 카드의 SDP 연결은 별도 상태입니다.</p>
-          <p class="muted">이 앱을 실행한 PC에서 직접 잰 값입니다. 예제(demo) 계정·사건과 관계없습니다. 디스크는 앱 폴더가 있는 드라이브 기준입니다.</p>
-          <div class="row"><button type="button" id="pc-status-refresh" class="btn" aria-label="CPU·메모리·디스크 다시 조회">PC 상태 다시 조회</button></div>
-          <p id="pc-status-message" role="status" aria-live="polite">측정 전 · 확인 불가</p>
-          <div id="pc-status-errors" class="dashboard-error" role="alert" hidden></div>
-          <div class="dashboard-summary-grid" aria-label="PC 상태와 SDP 연결 상태">
-            <div id="pc-status-values" class="pc-status-grid" aria-live="polite"></div>
-            <section id="sdp-status-summary" class="pc-status-metric" aria-live="polite">
-              <h3>SDP 서버 연결</h3>
-              <p class="pc-status-value">확인 불가</p>
-              <p>연결 상태 조회 전 · PC 측정과 별도</p>
-            </section>
-          </div>
-          <div id="pc-status-compare" class="pc-status-compare" aria-live="polite"></div>
+        <section id="gigachad-pc-dashboard" class="card student" aria-label="기가차드 학생 PC 상태 요약과 직전 추이">
+          <h2>기가차드 · PC 상태 요약</h2>
+          <p class="muted">학생 PC 요약을 불러오는 중입니다. 실제 조회 전에는 확인 불가로 표시합니다.</p>
         </section>
-
-        <section class="card student" aria-labelledby="windows-observation-title">
-          <h2 id="windows-observation-title">Windows 네트워크·방화벽·이벤트 <span class="tag tag-student">학생 추가 · 읽기 전용</span></h2>
-          <p class="dashboard-feature-lead"><strong>핵심 2 · 네트워크·방화벽</strong> 연결 상태 및 설정을 확인합니다. <strong>핵심 3 · Windows 기록</strong> 아래에서 오류와 경고 건수를 확인합니다.</p>
-          <p class="muted">이 앱을 실행한 Windows PC의 로컬 정보를 조회합니다. 실제 네트워크·방화벽 설정은 변경하지 않습니다. 아래 Windows 로그 건수는 침해·공격 탐지 건수나 감염 판정이 아닙니다.</p>
-          <div class="row"><button type="button" id="windows-observation-refresh" class="btn" aria-label="네트워크·방화벽·Windows 기록 다시 조회">Windows 상태 다시 조회</button></div>
-          <p id="windows-observation-message" role="status" aria-live="polite">조회 전 · 확인 불가</p>
-          <div id="windows-observation-errors" class="dashboard-error" role="alert" hidden></div>
-          <div class="dashboard-observation-grid">
-            <section class="dashboard-observation-panel" aria-labelledby="windows-network-title">
-              <h3 id="windows-network-title">네트워크 연결 상태</h3>
-              <div id="windows-network" aria-live="polite">조회 전 · 확인 불가</div>
-            </section>
-            <section class="dashboard-observation-panel" aria-labelledby="windows-firewall-title">
-              <h3 id="windows-firewall-title">방화벽 설정</h3>
-              <div id="windows-firewall" aria-live="polite">조회 전 · 확인 불가</div>
-            </section>
-            <section class="dashboard-observation-panel dashboard-observation-wide" aria-labelledby="windows-events-title">
-              <h3 id="windows-events-title">최근 Windows 기록 · 지난 24시간</h3>
-              <p class="muted">System 및 Application의 경고(Level 3)와 오류(Level 2) 건수만 집계합니다. 침해·공격 탐지 결과가 아닙니다.</p>
-              <div id="windows-events" aria-live="polite">조회 전 · 확인 불가</div>
-            </section>
-          </div>
+        <section id="pc-status" class="card provided" aria-label="내 PC 상태"></section>
+        <section id="local-pc-notice" class="card provided local-pc-notice" data-testid="local-pc-notice" aria-labelledby="local-pc-notice-title" tabindex="-1" hidden>
+          <h2 id="local-pc-notice-title">내 PC 점검 모드 <span class="tag">제공 · 실행 안내</span></h2>
+          <p class="local-pc-lead">내 PC 상태는 확인할 수 있습니다. 계정·AI·SDP 연결은 이 실행에 포함되지 않았습니다. 위쪽 「내 PC 확인」부터 시작하세요.</p>
+          <ol class="connect-steps">
+            <li>위쪽 「내 PC 확인」을 눌러 CPU·메모리·디스크·네트워크·Windows 방화벽·Windows 기록 값을 읽습니다.</li>
+            <li>계속 지켜보려면 「10초마다 확인」을 켭니다. 앱 탭이 보이는 동안에만 확인합니다.</li>
+            <li>로그인·업무 앱·보안 기록·AI 연결이 필요한 작업은 담당자가 안내한 연결 실행으로 앱을 다시 열어 진행합니다. 이 화면에서는 연결을 시작하지 않습니다.</li>
+          </ol>
+          <p class="muted">이 안내는 서버가 알려 준 실행 형태를 화면에 옮긴 것입니다. 권한·연결 성공·안전·통과 판정이 아니며, 제공 UI라서 학생 성취로 계산하지 않습니다. 그래서 AI 연결 절차와 AI 연결 점검 카드는 이 실행에서 접어 두었습니다.</p>
         </section>
+        <figure id="start-picture" class="start-picture" hidden>
+          <img id="start-picture-image" class="start-picture-image" alt="" aria-hidden="true" draggable="false" decoding="async">
+        </figure>
 
         <div class="grid-2">
           <section class="card provided" aria-labelledby="identity-title">
@@ -133,7 +109,7 @@
           <pre id="diag-output" class="diag-output" tabindex="0" hidden></pre>
         </section>
 
-        <section class="card provided" aria-labelledby="ai-connect-title" data-testid="ai-connect-card">
+        <section id="ai-connect-card" class="card provided" aria-labelledby="ai-connect-title" data-testid="ai-connect-card">
           <h2 id="ai-connect-title">AI 연결 <span class="tag">제공 · 17단계 연결 절차</span></h2>
           <div class="connect-layout">
             <div class="connect-body">
@@ -186,7 +162,7 @@
           </div>
         </section>
 
-        <section class="card provided" aria-labelledby="ai-connection-title">
+        <section id="ai-connection-card" class="card provided" aria-labelledby="ai-connection-title">
           <h2 id="ai-connection-title">AI 연결 점검 <span class="tag">제공</span></h2>
           <p class="muted">현재 로그인과 앱 권한으로 모델 응답을 점검합니다. 설정값 존재·모델 목록 응답은 사건 설명의 성공과 별도로 확인합니다. 브라우저에서 열쇠를 입력하거나 복사하지 않습니다.</p>
           <div class="row">

@@ -1,6 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {collectWindowsObservation} from '../src/windows-observation.mjs';
+import {normalizeWindowsStatus} from '../src/pc-status.mjs';
+
+test('0.2.21 통합 Windows 계약: 방화벽·System/Application 경고·오류를 읽기 전용 요약한다',()=>{
+  const value=normalizeWindowsStatus({firewall:{state:'ok',profiles:[
+    {name:'Public',enabled:false},{name:'Private',enabled:true},{name:'Domain',enabled:true},
+  ]},events:{state:'ok',warningCount:4,errorCount:0,truncated:false,sampleLimit:5000,since:checkedAt}});
+  assert.equal(value.firewall.state,'ok');
+  assert.equal(value.firewall.profiles.find(p=>p.name==='Public').enabled,false);
+  assert.equal(value.events.state,'ok');
+  assert.equal(value.events.errorCount,0);
+  assert.equal(value.events.warningCount,4);
+});
+
+test('0.2.21 통합 Windows 계약: 권한 없음은 실제 0건으로 위장하지 않는다',()=>{
+  const value=normalizeWindowsStatus({firewall:{state:'unavailable',reason:'permission_denied'},
+    events:{state:'unavailable',reason:'query_failed'}});
+  assert.deepEqual(value.firewall,{state:'unavailable',reason:'permission_denied'});
+  assert.deepEqual(value.events,{state:'unavailable',reason:'query_failed'});
+});
 
 const checkedAt='2026-10-27T01:02:03.000Z';
 const time=()=>new Date(checkedAt);
